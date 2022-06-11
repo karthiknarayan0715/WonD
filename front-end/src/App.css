@@ -1,0 +1,139 @@
+body{
+  background-color: rgb(240, 227, 215);
+}
+.App
+{
+  height: 80vh;
+}
+#header
+{
+  display: flex;
+  width: 100%;
+  height: 100px;
+  align-items: center;
+}
+#header .text{
+  font-size: 60px;
+  justify-items: center;
+  padding-left: 30px;
+  margin-right: auto;
+}
+.pageContent
+{
+  background-color: rgb(201, 192, 183);
+  display : flex;
+  align-items: center;
+  justify-content : center;
+  padding-top : 30px; 
+  height: 100%;
+  width : auto;
+  margin : 0px 30px 0px 30px;
+}
+#home{
+  background-color: rgb(201, 192, 183);
+  display : flex;
+  justify-content : center;
+  padding-top : 30px; 
+  height: 100%;
+  width : auto;
+  margin : 0px 30px 0px 30px;
+}
+#header .to_right
+{
+  display: flex;
+  align-items: center;
+  margin-right: 50px;
+}
+.to_right .box
+{
+  margin: 10px;
+}
+.box 
+{
+  background-color: rgb(240, 227, 215);
+  border: 1px solid rgb(188, 131, 77);
+  display: flex;
+  justify-content: center;
+  color: black;
+  align-items: center;
+  transition: all 200ms;
+}
+.box:hover
+{
+  background-color: rgb(204, 192, 180);
+  border: 1px solid rgb(143, 93, 46);
+}
+a
+{
+  color: black;
+  text-decoration: none;
+}
+input[type = "text"]{
+  width: 300px;
+  height: 40px;
+  font-size: 23px;
+  text-align: center;
+}
+input[type = "password"]{
+  width: 300px;
+  height: 40px;
+  font-size: 23px;
+  text-align: center;
+}
+.form .text
+{
+  text-align: center;
+  font-size: 36px;
+  color: rgb(103, 51, 3);
+}
+.error
+{
+  text-align: center;
+}
+.holder .error .text{
+  font-size: 16;
+}
+.form
+{
+  text-align: center;
+}
+.form button
+{
+  width: 90px;
+  height: 50px
+}
+.dropdown
+{
+  cursor: pointer;
+  margin-right: 100px;
+}
+.dropdown .content{
+  display: none;
+}
+.dropdown .content.active{
+  display: block;
+  position: fixed;
+  margin-top: 20px;
+  background-color: rgb(249, 222, 198);
+}
+.dropdown .content .item {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 250px;
+  height: 50px;
+  border-bottom: 1px solid rgb(188, 176, 165);
+}
+.dropdown .content .item:hover {
+    background-color: rgb(254, 218, 186);
+}
+
+.YourPages{
+  background-color: rgb(201, 192, 183);
+  display : flex;
+  justify-content : center;
+  padding-top : 30px; 
+  height: 100%;
+  width : auto;
+  margin : 0px 30px 0px 30px;
+}
