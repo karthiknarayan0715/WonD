@@ -25,7 +25,7 @@ const PageEditting = ()=>{
     }
 
     const mouseMove = (event, element)=>{
-        updateElement(element.id, element.top - initY + event.clientY, element.left - initX + event.clientX)
+        updateElement(element.id, {top: element.top - initY + event.clientY, left: element.left - initX + event.clientX})
         initY = event.clientY
         initX = event.clientX
     }
@@ -61,9 +61,7 @@ const PageEditting = ()=>{
             updateElement(selected_element.id, {left: val})
     }
     const backgroundChanged = (event)=>{
-        var val = parseFloat(event.target.value)
-        if (val != NaN)
-            updateElement(selected_element.id, {backgroundColor:val})
+        updateElement(selected_element.id, {backgroundColor:event.target.value})
     }
     const widthChanged = (event)=>{
         var val = parseFloat(event.target.value)
@@ -157,9 +155,9 @@ const PageEditting = ()=>{
         var new_element;
         var id = elements.length;
         if(item == "box")
-            new_element = new Box(id, 10, 10, 300, 400, "5% 5%", "red");
+            new_element = new Box(id, 10, 10, 300, 400, "5% 5%", "#000000");
         else if(item == "circle")
-            new_element = new Circle(id, 500, 400, 300, "red");
+            new_element = new Circle(id, 500, 400, 300, "#000000");
         var array = elements;
         array.push(new_element)
         updateElements([...array])
@@ -213,10 +211,10 @@ const PageEditting = ()=>{
                         <div className='elementProperties'>
                             <form onSubmit={(e)=>{e.preventDefault()}}>
                                 <div className='text'>Top</div><input type="text" defaultValue={selected_element.top} onChange={topChanged}></input>
-                                <div className='text'>Left</div><input type="text" defaultValue={selected_element.top} onChange={leftChanged}></input>
-                                <div className='text'>Color</div><input type="color" defaultValue={selected_element.top} onChange={backgroundChanged}></input>
-                                <div className='text'>Width</div><input type="text" defaultValue={selected_element.top} onChange={widthChanged}></input>
-                                <div className='text'>Height</div><input type="text" defaultValue={selected_element.top} onChange={heightChanged}></input>
+                                <div className='text'>Left</div><input type="text" defaultValue={selected_element.left} onChange={leftChanged}></input>
+                                <div className='text'>Color</div><input type="color" defaultValue={selected_element.backgroundColor} onChange={backgroundChanged}></input>
+                                <div className='text'>Width</div><input type="text" defaultValue={selected_element.width} onChange={widthChanged}></input>
+                                <div className='text'>Height</div><input type="text" defaultValue={selected_element.height} onChange={heightChanged}></input>
                             </form>
                         </div>
                         :
