@@ -5,40 +5,70 @@ import { useEffect, useState } from 'react'
 
 const PageEditting = ()=>{
     const [selected_element, SelectElement] = useState("none")
-    const [equipped_tool, EquipTool] = useState("none");
     const [elements, updateElements] = useState([]);
 
-    var selectedElement = NaN;
-    var dragX = 0;
-    var dragY = 0;
-
-
-
-    const dragstart = (element)=>{
-        console.log(elements)
-        for(var i=0; i<elements.length; i++){
-            if(elements[i].id == element.id){
-                selectedElement = element
-                break;
-            }
-        };
-    }
-
-    const drag = (event)=>{
-        updateElement(selectedElement.id, event.clientY - selectedElement.height/2, event.clientX-selectedElement.width/2)
-    }
-
-    const dragend = (event)=>{
-        console.log(elements)
-        updateElement(selectedElement.id, event.clientY - selectedElement.height/2, event.clientX-selectedElement.width/2)
-    }
-
+    var initX, initY   
 
     const updateElement = (id, top, left)=>{
-        const temp_array = [...elements]
+        const temp_array = elements
         temp_array[id].top = top;
         temp_array[id].left = left;
         updateElements([...temp_array])
+    }
+
+    const mouseMove = (event, element)=>{
+        console.log(event.clientX, event.clientY)
+        const docEl = document.getElementById(element.id)
+        updateElement(element.id, element.top - initY + event.clientY, element.left - initX + event.clientX)
+        initY = event.clientY
+        initX = event.clientX
+    }
+
+    const mouseDown = (event, element)=>{
+        console.log(element)
+        onmousemove = (event)=>{mouseMove(event, element)}
+        onmouseup = mouseUp
+        initX = event.clientX;
+        initY = event.clientY;
+    }
+
+    const mouseUp = (element) =>{
+        onmousemove = null
+        onmouseup = null
+    }
+
+    const test = ()=>{
+        updateElement(1, 50, 500)
+        const wait = setTimeout(()=>{
+            updateElement(0, 500, 500)
+        }, 2000)
+        const wait2 = setTimeout(()=>{
+            updateElement(1, 50, 50)
+        }, 4000)
+        const wait3 = setTimeout(()=>{
+            updateElement(0, 500, 50)
+        }, 4000)
+    }
+    const generateHTML = (element)=>{
+        if(element.type == "box")
+        return (<div id={element.id} key={element.id} className="element" onMouseDown={(event)=>{mouseDown(event, element)}} style={{
+            "top": element.top,
+            "left": element.left,
+            "width": element.width,
+            "height": element.height,
+            "borderRadius": element.border_radius,
+            "backgroundColor": element.backgroundColor,
+        }}></div>)
+        else if(element.type == "circle"){
+            return (<div id={element.id} key={element.id} className="element" style={{
+                "top": element.top,
+                "left": element.left,
+                "width": element.radius,
+                "height": element.radius,
+                "borderRadius": "50%",
+                "backgroundColor": element.backgroundColor
+            }}></div>)
+        }
     }
 
     function Box(id, top, left, width, height, border_radius, backgroundColor) {
@@ -50,16 +80,6 @@ const PageEditting = ()=>{
         this.height = height;
         this.border_radius = border_radius;
         this.backgroundColor = backgroundColor
-        this.GetHtml = ()=>{
-            return (<div id={this.id} key={this.id} className="element" draggable="true" onDragStart={()=>{dragstart(this)}} onDrag={drag} onDragEnd={dragend} style={{
-                "top": this.top,
-                "left": this.left,
-                "width": this.width,
-                "height": this.height,
-                "borderRadius": this.border_radius,
-                "backgroundColor": this.backgroundColor,
-            }}></div>)
-        }
     }
     function Circle(id, top, left, radius, backgroundColor){
         this.id = id;
@@ -68,16 +88,6 @@ const PageEditting = ()=>{
         this.left = left;
         this.radius = radius;
         this.backgroundColor = backgroundColor;
-        this.GetHtml = ()=>{
-            return (<div id={this.id} key={this.id} draggable="true" className="element" onDragStart={()=>{console.log(elements); dragstart(this)}} onDrag={()=>{drag(this)}} onDragEnd={()=>{dragend(this)}} style={{
-                "top": this.top,
-                "left": this.left,
-                "width": this.radius,
-                "height": this.radius,
-                "borderRadius": "50%",
-                "backgroundColor": this.backgroundColor
-            }}></div>)
-        }
     }
 
     function toggle(){
@@ -106,7 +116,6 @@ const PageEditting = ()=>{
     }
 
     function addElement(item){
-        EquipTool(item)
         var new_element;
         var id = elements.length;
         if(item == "box")
@@ -124,12 +133,16 @@ const PageEditting = ()=>{
         $('.toolbar').hide(0)
         $(".elementProperties").hide(0)
     }, [])
+    // useEffect(() => {
+        
+    // })
 
     return(
         <div className="pageEditting">
             <div className="sideBar" style={{"height": "auto"}}>
                 <div className='toggle' style={{"width": "50px", "height": "auto"}} onClick={toggle}><img src='/settings.png' width="50px" height="50px"></img></div>
                 <div className='toolbar'>
+                    <div className='TestingButton'><button onClick={test}>Test</button></div>
                     <div className='heading'>SHAPES</div>
                     <div className="tools">
                     <div className='item' id='box' onClick={()=>{addElement("box")}}><div id='boxImage'></div></div>
@@ -142,7 +155,7 @@ const PageEditting = ()=>{
                 <div className='htmlOut'>
                     {
                         elements.map((element)=>{
-                            return element.GetHtml()
+                            return generateHTML(element)
                         })
                     }
                 </div>
