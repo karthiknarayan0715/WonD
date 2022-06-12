@@ -81,10 +81,10 @@
 .elementProperties{
     z-index: 1;
     position: fixed;
-    top: 0px;
+    top: 50px;
     right: 0px;
     width: 400px;
-    height: 600px;
+    height: 560px;
     background-color: rgb(171, 197, 221);
 }
 .htmlOut{
@@ -95,4 +95,7 @@
 }
 .element{
     position: absolute;
+}
+.element.selected{
+    border: 1px dotted black;
 }

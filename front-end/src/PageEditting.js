@@ -4,28 +4,33 @@ import 'jquery-ui'
 import { useEffect, useState } from 'react'
 
 const PageEditting = ()=>{
-    const [selected_element, SelectElement] = useState("none")
+    const [selected_element, SelectElement] = useState(null)
     const [elements, updateElements] = useState([]);
 
     var initX, initY   
 
-    const updateElement = (id, top, left)=>{
+    const updateElement = (id, {top = null, left = null, backgroundColor = null, height = null, width = null})=>{
+        if(top == null) top = elements[id].top
+        if(left == null) left = elements[id].left
+        if(backgroundColor == null) backgroundColor = elements[id].backgroundColor
+        if(height == null) height = elements[id].height
+        if(width == null) width = elements[id].width
         const temp_array = elements
         temp_array[id].top = top;
         temp_array[id].left = left;
+        temp_array[id].backgroundColor = backgroundColor;
+        temp_array[id].height = height;
+        temp_array[id].width = width;
         updateElements([...temp_array])
     }
 
     const mouseMove = (event, element)=>{
-        console.log(event.clientX, event.clientY)
-        const docEl = document.getElementById(element.id)
         updateElement(element.id, element.top - initY + event.clientY, element.left - initX + event.clientX)
         initY = event.clientY
         initX = event.clientX
     }
 
     const mouseDown = (event, element)=>{
-        console.log(element)
         onmousemove = (event)=>{mouseMove(event, element)}
         onmouseup = mouseUp
         initX = event.clientX;
@@ -37,6 +42,39 @@ const PageEditting = ()=>{
         onmouseup = null
     }
 
+    const dblclick = (element , event=null)=>{
+        event.stopPropagation()
+        SelectElement(element)
+    }
+    const removeSelected = (event=null)=>{
+       SelectElement(null)
+    }
+
+    const topChanged = (event)=>{
+        var val = parseFloat(event.target.value)
+        if (val != NaN)
+            updateElement(selected_element.id, {top: val})
+    }
+    const leftChanged = (event)=>{
+        var val = parseFloat(event.target.value)
+        if (val != NaN)
+            updateElement(selected_element.id, {left: val})
+    }
+    const backgroundChanged = (event)=>{
+        var val = parseFloat(event.target.value)
+        if (val != NaN)
+            updateElement(selected_element.id, {backgroundColor:val})
+    }
+    const widthChanged = (event)=>{
+        var val = parseFloat(event.target.value)
+        if (val != NaN)
+            updateElement(selected_element.id, {width: val})
+    }
+    const heightChanged = (event)=>{
+        var val = parseFloat(event.target.value)
+        if (val != NaN)
+            updateElement(selected_element.id, {height: val})
+    }
     const test = ()=>{
         updateElement(1, 50, 500)
         const wait = setTimeout(()=>{
@@ -51,7 +89,7 @@ const PageEditting = ()=>{
     }
     const generateHTML = (element)=>{
         if(element.type == "box")
-        return (<div id={element.id} key={element.id} className="element" onMouseDown={(event)=>{mouseDown(event, element)}} style={{
+        return (<div id={element.id} key={element.id} className="element" onDoubleClick={(event)=>dblclick(element, event)} onMouseDown={(event)=>{mouseDown(event, element)}} style={{
             "top": element.top,
             "left": element.left,
             "width": element.width,
@@ -60,7 +98,7 @@ const PageEditting = ()=>{
             "backgroundColor": element.backgroundColor,
         }}></div>)
         else if(element.type == "circle"){
-            return (<div id={element.id} key={element.id} className="element" onMouseDown={(event)=>{mouseDown(event, element)}} style={{
+            return (<div id={element.id} key={element.id} className="element" onDoubleClick={(event)=>dblclick(element, event)} onMouseDown={(event)=>{mouseDown(event, element)}} style={{
                 "top": element.top,
                 "left": element.left,
                 "width": element.radius,
@@ -133,9 +171,17 @@ const PageEditting = ()=>{
         $('.toolbar').hide(0)
         $(".elementProperties").hide(0)
     }, [])
-    // useEffect(() => {
-        
-    // })
+    useEffect(() => {
+        if(selected_element){
+            document.getElementById(selected_element.id).classList.add("selected")
+        }
+        else{
+            elements.forEach(element => {
+                if(document.getElementById(element.id).classList.contains("selected"))
+                    document.getElementById(element.id).classList.remove("selected")
+            });
+        }
+    })
 
     return(
         <div className="pageEditting">
@@ -152,7 +198,7 @@ const PageEditting = ()=>{
                 </div>
             </div>
             <div className="workArea">
-                <div className='htmlOut'>
+                <div className='htmlOut' onClick={(event)=>{removeSelected(event)}}>
                     {
                         elements.map((element)=>{
                             return generateHTML(element)
@@ -161,11 +207,23 @@ const PageEditting = ()=>{
                 </div>
                 <div className='elementData'>
                     <div className="selectedElement" onClick={toggleElementProperties}>
-                        <div className='elementName'>{selected_element} <b>˅</b></div>
+                    {selected_element ? <div className='elementName'>Element {selected_element.id} <b>˅</b></div> : <div className='elementName'>none <b>˅</b></div>}
                     </div>
-                    <div className='elementProperties'>
+                    {selected_element ?
+                        <div className='elementProperties'>
+                            <form onSubmit={(e)=>{e.preventDefault()}}>
+                                <div className='text'>Top</div><input type="text" defaultValue={selected_element.top} onChange={topChanged}></input>
+                                <div className='text'>Left</div><input type="text" defaultValue={selected_element.top} onChange={leftChanged}></input>
+                                <div className='text'>Color</div><input type="color" defaultValue={selected_element.top} onChange={backgroundChanged}></input>
+                                <div className='text'>Width</div><input type="text" defaultValue={selected_element.top} onChange={widthChanged}></input>
+                                <div className='text'>Height</div><input type="text" defaultValue={selected_element.top} onChange={heightChanged}></input>
+                            </form>
+                        </div>
+                        :
+                        <div className='elementProperties'>
 
-                    </div>
+                        </div>
+                    }
                 </div>
             </div>
         </div>
