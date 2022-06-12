@@ -60,7 +60,7 @@ const PageEditting = ()=>{
             "backgroundColor": element.backgroundColor,
         }}></div>)
         else if(element.type == "circle"){
-            return (<div id={element.id} key={element.id} className="element" style={{
+            return (<div id={element.id} key={element.id} className="element" onMouseDown={(event)=>{mouseDown(event, element)}} style={{
                 "top": element.top,
                 "left": element.left,
                 "width": element.radius,
