@@ -103,21 +103,21 @@ input[type = "password"]{
   width: 90px;
   height: 50px
 }
-.dropdown
+.App .dropdown
 {
   cursor: pointer;
   margin-right: 100px;
 }
-.dropdown .content{
+.App .dropdown .content{
   display: none;
 }
-.dropdown .content.active{
+.App .dropdown .content.active{
   display: block;
   position: fixed;
   margin-top: 20px;
   background-color: rgb(249, 222, 198);
 }
-.dropdown .content .item {
+.App .dropdown .content .item {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -151,7 +151,7 @@ input[type = "password"]{
 .window-back.active{
   display: flex;
 }
-.window{
+.window-back .window{
   width: 1000px;
   height: 700px;
   background-color: rgb(201, 192, 183);

@@ -44,18 +44,18 @@ const YourPages = ()=>{
     }
 
     const [siteName, SetSiteName] = useState("")
-    const [mainRoute, SetMainRoute] = useState("")
     const [gotData, setGotData] = useState(false)
 
     const addWebSite = async ()=>{
         const req = {
             method: 'POST',
             headers: {'content-type': 'application/json'},
-            body: JSON.stringify({"site_name": siteName, "main_route_name": mainRoute, "jwt": cookies.get("jwt")}),
+            body: JSON.stringify({"site_name": siteName, "jwt": cookies.get("jwt")}),
         };
         const res = await fetch( `${server_url}/api/websites/add`, req);
         const response = await res.json();
-        navigate("/webpages/add", {state: {"site_id": response.site_id}})
+        if(response.result == "success")
+            navigate("/webpages/add", {state: {"site_id": response.site_id}})
     }
 
     return (
@@ -83,7 +83,6 @@ const YourPages = ()=>{
                 <div className="form-content">
                     <div style={{"display": "block"}}>
                         <div className="text">Site Name</div><input type="text" onChange={(event)=>{SetSiteName(event.target.value)}}></input><br></br><br></br>
-                        <div className="text">Main Route</div><input type="text" onChange={(event)=>{SetMainRoute(event.target.value)}}></input><br></br><br></br>
                         <div className="button"><button onClick={addWebSite}>Create Website</button></div>
                     </div>
                 </div>

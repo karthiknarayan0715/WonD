@@ -34,7 +34,7 @@ const sitesRoutesSchema = mongoose.Schema({
   route_id: {type: mongoose.Schema.Types.ObjectId, ref: "routes"}
 })
 const routesSchema = mongoose.Schema({
-  route: String,
+  name: String,
   html: String
 })
 const userSitesSchema = new mongoose.Schema({
@@ -154,7 +154,7 @@ app.post('/api/websites/add', (req, res)=>{
       const site_name = req.body.site_name;
       new_site = new Sites({name: site_name})
       new_site.save()
-      const new_route = new Routes({name: req.body.main_route_name, html: ""})
+      const new_route = new Routes({name: "index", html: ""})
       new_route.save();
       const new_site_route = new SitesRoutes({site_id: new_site.id, route_id: new_route.id})
       new_site_route.save();
@@ -194,9 +194,24 @@ app.post("/api/getSite", async (req, res)=>{
     const site_routes = await SitesRoutes.find({"site_id": site_id})
     var routes = []
     for(i=0; i<site_routes.length; i++){
-      routes.push(await Routes.find({"_id": site_routes[i].route_id}))
+      routes.push(await Routes.findOne({"_id": site_routes[i].route_id}))
     }
     res.end(JSON.stringify({"result": "success", "site": site, "routes": routes}))
+  }
+  catch(err){
+    console.log(err)
+    res.end(JSON.stringify({"result": "failed", "error": err}))
+  }
+})
+app.post("/api/websites/routes/add", async (req, res)=>{
+  try{
+    const site_id = req.body.site_id
+    const route_name = req.body.route_name
+    const new_route = new Routes({"name": route_name, "html": ""})
+    new_route.save()
+    const new_site_routes = new SitesRoutes({"route_id": new_route._id, "site_id": site_id})
+    new_site_routes.save()
+    res.end(JSON.stringify({"result": "success"}))
   }
   catch(err){
     console.log(err)

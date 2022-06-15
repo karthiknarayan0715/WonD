@@ -8,12 +8,13 @@ import { useLocation, useNavigate } from 'react-router-dom'
 const PageEditting = ()=>{
     const [selected_element, SelectElement] = useState(null)
     const [elements, updateElements] = useState([]);
-    const [route, updateRoute] = useState("")
     const [siteId, setSiteId] = useState(null)
     const [user, setUser] = useState(null)
     const [site, setSite] = useState(null)
     const [routes, setRoutes] = useState(null)
     const [curRoute, SetCurRoute] = useState(null)
+    const [newRouteName, SetNewRouteName] = useState(null)
+    const [windowOpen, SetWindowOpen] = useState(false)
     const location = useLocation()
     const navigate = useNavigate()
     const cookies = new Cookies()
@@ -39,6 +40,8 @@ const PageEditting = ()=>{
         }
         const res = await fetch(`${server_url}/api/getSite`, req)
         const response = await res.json()
+        setSite(response.site)
+        setRoutes(response.routes)
     }
 
     var initX, initY;
@@ -51,10 +54,39 @@ const PageEditting = ()=>{
         else
             navigate("/webpages")
     }, [])
+
+    useEffect(()=>{
+        $(".toolbar").addClass("inactive")
+        $(".elementProperties").addClass("inactive")
+        $('.toolbar').hide(0)
+        $(".elementProperties").hide(0)
+    }, [])
+    useEffect(() => {
+        if(selected_element){
+            document.getElementById(selected_element.id).classList.add("selected")
+            document.getElementById(selected_element.id).querySelector('.resizeIcons').classList.add("active")
+        }
+        else{
+            elements.forEach(element => {
+                const docEl = document.getElementById(element.id)
+                if(docEl.classList.contains("selected")){
+                    docEl.classList.remove("selected")
+                    docEl.querySelector(".resizeIcons").classList.remove("active")
+                }
+            });
+        }
+    })
     useEffect(()=>{
         getSiteData()
     }, [siteId])
+    useEffect(()=>{
+        if(routes && routes.length > 0)
+            SetCurRoute(routes[0])
+    }, [routes])
+    useEffect(()=>{
+    }, [curRoute])
 
+    //#region 
 
     const updateElement = (id, {top = null, left = null, backgroundColor = null, height = null, width = null})=>{
         if(top == null) top = elements[id].top
@@ -120,6 +152,7 @@ const PageEditting = ()=>{
         if (val != NaN)
             updateElement(selected_element.id, {height: val})
     }
+    //#endregion
     const generateHTML = (element)=>{
         if(element.type == "box")
         return (<div id={element.id} key={element.id} className="element" onDoubleClick={(event)=>dblclick(element, event)} onMouseDown={(event)=>{mouseDown(event, element)}} style={{
@@ -169,14 +202,19 @@ const PageEditting = ()=>{
     }
 
     function toggle(){
-        if ($(".toolbar").hasClass("inactive"))
-        {
-            $('.toolbar').slideDown(300)
-            $(".toolbar").removeClass("inactive")
-        }
-        else{            
-            $('.toolbar').slideUp(300)
-            $(".toolbar").addClass("inactive")
+        if(!windowOpen){
+            if($(".allRoutes").hasClass("active")){
+                toggleRoutes();
+            }
+            if ($(".toolbar").hasClass("inactive"))
+            {
+                $('.toolbar').slideDown(300)
+                $(".toolbar").removeClass("inactive")
+            }
+            else{            
+                $('.toolbar').slideUp(300)
+                $(".toolbar").addClass("inactive")
+            }
         }
     }
 
@@ -204,34 +242,82 @@ const PageEditting = ()=>{
         array.push(new_element)
         updateElements([...array])
     }
-
-    useEffect(()=>{
-        $(".toolbar").addClass("inactive")
-        $(".elementProperties").addClass("inactive")
-        $('.toolbar').hide(0)
-        $(".elementProperties").hide(0)
-    }, [])
-    useEffect(() => {
-        if(selected_element){
-            document.getElementById(selected_element.id).classList.add("selected")
-            document.getElementById(selected_element.id).querySelector('.resizeIcons').classList.add("active")
+    function toggleRoutes(){
+        if($(".allRoutes").hasClass("active")){
+            $(".allRoutes").removeClass("active")
         }
         else{
-            elements.forEach(element => {
-                const docEl = document.getElementById(element.id)
-                if(docEl.classList.contains("selected")){
-                    docEl.classList.remove("selected")
-                    docEl.querySelector(".resizeIcons").classList.remove("active")
-                }
-            });
+            $(".allRoutes").addClass("active")
         }
-    })
+    }
+    const openWindow = ()=>{
+        SetWindowOpen(true)
+        toggleRoutes()
+        toggle()
+        $(".window-back").addClass("active")
+    }
+    const closeWindow = ()=>{
+        SetWindowOpen(false)
+        $(".window-back").removeClass("active")
+    }
+
+    const addRoute = async ()=>{
+        console.log(newRouteName)
+        const req = {
+            method: "POST",
+            headers: {"content-type": "application/json"},
+            body: JSON.stringify({"site_id": siteId, "route_name": newRouteName})
+        }
+        const res = await fetch(`${server_url}/api/websites/routes/add`, req)
+        const response = await res.json()
+        console.log(response)
+        if(response.result == "success"){
+            getSiteData()
+            closeWindow()
+        }
+    }
+    const getHTML = ()=>{
+        const html = `
+            <!DOCTYPE html>
+            <html>
+                <head>
+                    <title>${site.name}</title>
+                </head>
+                <body>
+                    ${
+                        elements.map((element)=>{
+                            return generateHTML(element)
+                        })
+                    }
+                </body>
+            </html>
+        `
+    }
 
     return(
+        <div>
         <div className="pageEditting">
             <div className="sideBar" style={{"height": "auto"}}>
                 <div className='toggle' style={{"width": "50px", "height": "auto"}} onClick={toggle}><img src='/settings.png' width="50px" height="50px"></img></div>
                 <div className='toolbar'>
+                    {routes && site && curRoute &&
+                        <div className='routeData'>
+                            <div className='siteName'>{site.name}</div>
+                            <div className='routes'>
+                                <div className='curRoute' onClick={toggleRoutes}><div className='text'>{curRoute.name}</div></div>
+                                <div className='allRoutes'>
+                                    {
+                                        routes.map((route)=>{
+                                            return (
+                                                <div className='route' key={route._id}>{route.name}</div>
+                                            )
+                                        })
+                                    }
+                                    <div className='route' onClick={openWindow}>New route</div>
+                                </div>
+                            </div>
+                        </div>
+                    }
                     <div className='heading'>SHAPES</div>
                     <div className="tools">
                     <div className='item' id='box' onClick={()=>{addElement("box")}}><div id='boxImage'></div></div>
@@ -269,6 +355,18 @@ const PageEditting = ()=>{
                     }
                 </div>
             </div>
+        </div>
+        <div className="window-back">
+            <div className="window">
+                <div className="heading"><div className="text">New Site</div><div id="closeButton" onClick={closeWindow}>X</div></div>
+                <div className="form-content">
+                    <div style={{"display": "block"}}>
+                        <div className="text">Route Name</div><input type="text" onChange={(event)=>{SetNewRouteName(event.target.value)}}></input><br></br><br></br>
+                        <div className="button"><button onClick={addRoute}>Add Route</button></div>
+                    </div>
+                </div>
+            </div>
+        </div>
         </div>
     )
 }
