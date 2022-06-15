@@ -6,7 +6,7 @@ const Index = ()=>{
     const navigate = useNavigate()
     const cookies = new Cookies();
     const jwt = cookies.get("jwt")
-    const server_uri = "http://127.0.0.1:5000"
+    const server_url = "http://127.0.0.1:5000"
     const [user, setUser] = useState({})
 
     const verifyJWT = async ()=>{
@@ -15,7 +15,7 @@ const Index = ()=>{
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({"jwt": jwt})
         }
-        const res = await fetch(`${server_uri}/api/getUserData`, req)
+        const res = await fetch(`${server_url}/api/getUserData`, req)
         const response = await res.json()
         setUser(response.user)
     }

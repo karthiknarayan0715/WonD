@@ -1,13 +1,60 @@
 import './PageEditting.css'
 import $ from 'jquery'
 import 'jquery-ui'
+import Cookies from 'universal-cookie'
 import { useEffect, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 const PageEditting = ()=>{
     const [selected_element, SelectElement] = useState(null)
     const [elements, updateElements] = useState([]);
+    const [route, updateRoute] = useState("")
+    const [siteId, setSiteId] = useState(null)
+    const [user, setUser] = useState(null)
+    const [site, setSite] = useState(null)
+    const [routes, setRoutes] = useState(null)
+    const [curRoute, SetCurRoute] = useState(null)
+    const location = useLocation()
+    const navigate = useNavigate()
+    const cookies = new Cookies()
+    const jwt = cookies.get("jwt")
+    const server_url = "http://127.0.0.1:5000"
 
-    var initX, initY   
+    const verifyJWT = async ()=>{
+        const req = {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({"jwt": jwt})
+        }
+        const res = await fetch(`${server_url}/api/getUserData`, req)
+        const response = await res.json()
+        setUser(response.user)
+    }
+
+    const getSiteData = async ()=>{
+        const req = {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({"site_id": siteId})
+        }
+        const res = await fetch(`${server_url}/api/getSite`, req)
+        const response = await res.json()
+    }
+
+    var initX, initY;
+    useEffect(()=>{
+        if(!cookies.get("jwt")) navigate("/login")
+        if(location.state){
+            setSiteId(location.state.site_id)
+            verifyJWT()
+        }
+        else
+            navigate("/webpages")
+    }, [])
+    useEffect(()=>{
+        getSiteData()
+    }, [siteId])
+
 
     const updateElement = (id, {top = null, left = null, backgroundColor = null, height = null, width = null})=>{
         if(top == null) top = elements[id].top
@@ -73,18 +120,6 @@ const PageEditting = ()=>{
         if (val != NaN)
             updateElement(selected_element.id, {height: val})
     }
-    const test = ()=>{
-        updateElement(1, 50, 500)
-        const wait = setTimeout(()=>{
-            updateElement(0, 500, 500)
-        }, 2000)
-        const wait2 = setTimeout(()=>{
-            updateElement(1, 50, 50)
-        }, 4000)
-        const wait3 = setTimeout(()=>{
-            updateElement(0, 500, 50)
-        }, 4000)
-    }
     const generateHTML = (element)=>{
         if(element.type == "box")
         return (<div id={element.id} key={element.id} className="element" onDoubleClick={(event)=>dblclick(element, event)} onMouseDown={(event)=>{mouseDown(event, element)}} style={{
@@ -94,7 +129,14 @@ const PageEditting = ()=>{
             "height": element.height,
             "borderRadius": element.border_radius,
             "backgroundColor": element.backgroundColor,
-        }}></div>)
+        }}>
+            <div className='resizeIcons'>
+                <div id='left_top' style={{"position": "relative", "top": -10, "left": -10, "width": "10px", "height": "10px", "borderRadius": "50%", "border": "5px solid white"}}></div>
+                <div id='right_top' style={{"position": "relative", "top": -10, "left": element.width-30, "width": "10px", "height": "10px", "borderRadius": "50%", "border": "5px solid white"}}></div>
+                <div style={{"position": "relative", "top": element.height-7, "left": -50, "width": "10px", "height": "10px", "borderRadius": "50%", "border": "5px solid white"}}></div>
+                <div style={{"position": "relative", "top": element.height-7, "left": element.width-70, "width": "10px", "height": "10px", "borderRadius": "50%", "border": "5px solid white"}}></div>
+            </div>
+        </div>)
         else if(element.type == "circle"){
             return (<div id={element.id} key={element.id} className="element" onDoubleClick={(event)=>dblclick(element, event)} onMouseDown={(event)=>{mouseDown(event, element)}} style={{
                 "top": element.top,
@@ -172,11 +214,15 @@ const PageEditting = ()=>{
     useEffect(() => {
         if(selected_element){
             document.getElementById(selected_element.id).classList.add("selected")
+            document.getElementById(selected_element.id).querySelector('.resizeIcons').classList.add("active")
         }
         else{
             elements.forEach(element => {
-                if(document.getElementById(element.id).classList.contains("selected"))
-                    document.getElementById(element.id).classList.remove("selected")
+                const docEl = document.getElementById(element.id)
+                if(docEl.classList.contains("selected")){
+                    docEl.classList.remove("selected")
+                    docEl.querySelector(".resizeIcons").classList.remove("active")
+                }
             });
         }
     })
@@ -186,7 +232,6 @@ const PageEditting = ()=>{
             <div className="sideBar" style={{"height": "auto"}}>
                 <div className='toggle' style={{"width": "50px", "height": "auto"}} onClick={toggle}><img src='/settings.png' width="50px" height="50px"></img></div>
                 <div className='toolbar'>
-                    <div className='TestingButton'><button onClick={test}>Test</button></div>
                     <div className='heading'>SHAPES</div>
                     <div className="tools">
                     <div className='item' id='box' onClick={()=>{addElement("box")}}><div id='boxImage'></div></div>
@@ -226,6 +271,10 @@ const PageEditting = ()=>{
             </div>
         </div>
     )
+}
+
+PageEditting.defaultProps = {
+    "site_id": null
 }
 
 export default PageEditting

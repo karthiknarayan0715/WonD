@@ -26,18 +26,28 @@ const usersSchema = new mongoose.Schema({
   password: String,
   email: String,
 });
-const pagesSchema = mongoose.Schema({
+const sitesSchema = mongoose.Schema({
   name: String,
-  html: String,
 })
-const userWebsitesSchema = new mongoose.Schema({
+const sitesRoutesSchema = mongoose.Schema({
+  site_id: {type: mongoose.Schema.Types.ObjectId, ref: "sites"},
+  route_id: {type: mongoose.Schema.Types.ObjectId, ref: "routes"}
+})
+const routesSchema = mongoose.Schema({
+  route: String,
+  html: String
+})
+const userSitesSchema = new mongoose.Schema({
   user_id: {type: mongoose.Schema.Types.ObjectId, ref: "users"},
-  page_id: {type: mongoose.Schema.Types.ObjectId, ref: "pages"}
+  site_id: {type: mongoose.Schema.Types.ObjectId, ref: "sites"}
 })
 
 Users = mongoose.model('users', usersSchema);
-Pages = mongoose.model('pages', usersSchema);
-UsersPages = mongoose.model('users_pages', usersSchema);
+Sites = mongoose.model('sites', sitesSchema);
+SitesRoutes = mongoose.model('sites_routes', sitesRoutesSchema);
+Routes = mongoose.model('routes', routesSchema);
+UsersSites = mongoose.model('users_sites', userSitesSchema);
+
 
 const jwtSecretKey = "superSecretKey"
 
@@ -60,8 +70,6 @@ app.post('/api/allUsers', (req, res)=>{
   res.end(JSON.stringify({"users": users_array}))
 })
 app.post('/login', (req,res)=>{
-
-  console.log("Login: Recieving request!") 
   try{
     const username = req.body.username;
     const password = req.body.password;
@@ -96,7 +104,6 @@ app.post('/login', (req,res)=>{
 })
 
 app.post('/register', async (req, res)=>{
-  console.log("Register: Recieving request!") 
   try{
     const name = req.body.name;
     const username = req.body.username;
@@ -116,9 +123,57 @@ app.post('/register', async (req, res)=>{
   }
 })
 
-app.post('/api/getUserData', async (req, res)=>{
-  const jwt_req = req.body.jwt;
+app.post('/api/websites', async (req, res)=>{
   try{
+    const jwt_req = req.body.jwt;
+    const user = jwt.verify(jwt_req, jwtSecretKey)
+    if(user){ 
+      const UserSiteIds = await UsersSites.find({"user_id": user.id})
+      var pages = []
+      if(UserSiteIds.length > 0){
+        for(i=0; i<UserSiteIds.length; i++){
+          var page = await Sites.findOne({"_id": UserSiteIds[i].site_id})
+          pages.push(page)
+        }
+      }
+      res.end(JSON.stringify({"result": "success", "pages": pages}))
+    }else{
+      res.end(JSON.stringify({"result": "failed"}))
+    }
+  }
+  catch(err){
+    res.end(JSON.stringify({"result": "failed", "error": err}))
+  }
+})
+
+app.post('/api/websites/add', (req, res)=>{
+  try{
+    const jwt_req = req.body.jwt;
+    const user = jwt.verify(jwt_req, jwtSecretKey)
+    if(user){
+      const site_name = req.body.site_name;
+      new_site = new Sites({name: site_name})
+      new_site.save()
+      const new_route = new Routes({name: req.body.main_route_name, html: ""})
+      new_route.save();
+      const new_site_route = new SitesRoutes({site_id: new_site.id, route_id: new_route.id})
+      new_site_route.save();
+      const new_user_sites = new UsersSites({user_id: user.id, site_id: new_site.id})
+      new_user_sites.save();
+      res.end(JSON.stringify({"result": "success", "site_id": new_site.id}))
+    }
+    else{
+      res.end(JSON.stringify({"result": "failed"}))
+    }
+  }
+  catch(err){
+    res.end(JSON.stringify({"result": "failed", "error": err}))
+  }
+})
+
+app.post('/api/getUserData', async (req, res)=>{
+  try{
+    const jwt_req = req.body.jwt;
     const user = jwt.verify(jwt_req, jwtSecretKey)
     if(user){
       res.end(JSON.stringify({"result": "success", "user": {"name": user.name, "username": user.username, "password": user.password, "email": user.email}}))
@@ -132,46 +187,19 @@ app.post('/api/getUserData', async (req, res)=>{
   }
 })
 
-app.post('/api/websites', (req, res)=>{
-  const jwt_req = req.body.jwt;
-  var pages = []
+app.post("/api/getSite", async (req, res)=>{
   try{
-    const user = jwt.verify(jwt_req, jwtSecretKey)
-    if(user){ 
-      const UserPageIds = UsersPages.find({id: user.id})
-      if(UserPageIds.length > 0)
-        UserPageIds.forEach((pageId)=>{
-          const page = Pages.find({id: pageId.page_id})
-          pages.append(page)
-        })
-      res.end(JSON.stringify({"result": "success", "pages": pages}))
-    }else{
-      res.end(JSON.stringify({"result": "failed"}))
+    const site_id = req.body.site_id;
+    const site = await Sites.findOne({"_id": site_id})
+    const site_routes = await SitesRoutes.find({"site_id": site_id})
+    var routes = []
+    for(i=0; i<site_routes.length; i++){
+      routes.push(await Routes.find({"_id": site_routes[i].route_id}))
     }
+    res.end(JSON.stringify({"result": "success", "site": site, "routes": routes}))
   }
   catch(err){
+    console.log(err)
     res.end(JSON.stringify({"result": "failed", "error": err}))
-  }
-})
-
-app.post('/api/websites/add', (req, res)=>{
-  const jwt_req = req.body.jwt;
-  try{
-    const user = jwt.verify(jwt_req, jwtSecretKey)
-    if(user){
-      const page_name = req.body.page_name;
-      new_page = new Pages({name: page_name, html: ""})
-      new_page.save()
-      const page_id = new_page.id
-      const user_id = user.id
-      new_users_page = new UsersPages({user_id: user_id, page_id: page_id})
-      new_users_page.save()
-    }
-    else{
-      res.end(JSON.stringify({"result": "failed"}))
-    }
-  }
-  catch(err){
-    res.end(JSON.stringify({"result": "failed", "error": err[message]}))
   }
 })

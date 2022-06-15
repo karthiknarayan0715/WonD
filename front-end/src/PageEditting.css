@@ -97,5 +97,11 @@
     position: absolute;
 }
 .element.selected{
-    border: 1px dotted black;
+    border: 3px dotted white;
+}
+.resizeIcons{
+    display: none;
+}
+.resizeIcons.active{
+    display: flex;
 }
