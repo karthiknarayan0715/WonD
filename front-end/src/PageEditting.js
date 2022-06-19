@@ -89,14 +89,23 @@ const PageEditting = ()=>{
         const response = await res.json()
         var array = []
         for(var i=0; i<response.elements.length; i++){
+            var id = response.elements[i]._id
             var element = await JSON.parse(response.elements[i].elements)
-            array.push(new Element(element.id, element.top, element.left, element.width, element.height, element.border_radius, element.backgroundColor, element.text))
+            array.push(new Element(id, element.id, element.top, element.left, element.width, element.height, element.border_radius, element.backgroundColor, element.text))
         }
+        console.log(array)
         updateElements(array)
     }
 
-    const save = ()=>{
-
+    const save = async ()=>{
+        const req = {
+            method: "POST",
+            headers: {"content-type": "application/json"},
+            body: JSON.stringify({"elements": elements})
+        }
+        const res = await fetch(`${server_url}/api/websites/routes/elements/save`, req)
+        const response = await res.json()
+        console.log(response)
     }
 
     useEffect(()=>{
@@ -104,6 +113,13 @@ const PageEditting = ()=>{
         getElements()
     }, [curRoute])
     useEffect(()=>{
+        document.onkeydown = (event)=>{
+            event.preventDefault()
+            if(event.ctrlKey && event.key === "s"){
+                console.log("saving...")
+                save()
+            }
+        }
         if(elements.length > 0){
             elements.forEach((element)=>{
                 const elHTML = document.getElementById(element.id)
@@ -190,7 +206,8 @@ const PageEditting = ()=>{
     }
     //#endregion
     
-    function Element(id, top, left, width, height, border_radius, backgroundColor, text){
+    function Element(db_id, id, top, left, width, height, border_radius, backgroundColor, text){
+        this.db_id = db_id
         this.id = id;
         this.top = top;
         this.left = left;
@@ -248,9 +265,9 @@ const PageEditting = ()=>{
         var new_element;
         var id = elements.length;
         if(item == "box")
-            new_element = new Element(id, 10, 10, 300, 400, "0%", "#000000");
+            new_element = new Element(null, id, 10, 10, 300, 400, "0%", "#000000");
         else if(item == "circle")
-            new_element = new Element(id, 10, 10, 300, 300, "50%", "#000000");
+            new_element = new Element(null, id, 10, 10, 300, 300, "50%", "#000000");
         const req = {
             method: "POST",
             headers: {"content-type": "application/json"},

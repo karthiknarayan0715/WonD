@@ -225,7 +225,6 @@ app.post("/api/websites/routes/add", async (req, res)=>{
   }
 })
 app.post("/api/websites/routes/elements", async (req, res) => {
-  console.log("boo")
   try{
     const route_id = req.body.route_id;
     const routes_elements = await RoutesElements.find({"route_id": route_id})
@@ -245,9 +244,11 @@ app.post("/api/websites/routes/elements/add", async (req, res)=>{
   try{
     const cur_route_id = req.body.cur_route_id;
     const element_data = req.body.element_data;
-    console.log(element_data)
 
     const new_element = new Elements({"elements": JSON.stringify(element_data)})
+    var elements = await JSON.parse(new_element.elements)
+    elements.db_id = JSON.stringify(new_element._id)
+    new_element.elements = JSON.stringify(elements)
     new_element.save()
 
     console.log(new_element)
@@ -256,6 +257,24 @@ app.post("/api/websites/routes/elements/add", async (req, res)=>{
     new_route_element.save()
 
     res.end(JSON.stringify({"result": "success", "element": new_element}))
+  }
+  catch(err){
+    console.log(err)
+    res.end(JSON.stringify({"result": "failed", "error": err}))
+  }
+})
+
+app.post("/api/websites/routes/elements/save", async (req, res)=>{
+  try{
+    const elements = req.body.elements;
+    for(var i=0; i<elements.length; i++){
+      const element = elements[i]
+      const el_in_db = await Elements.findOne({"_id": element.db_id})
+      console.log(el_in_db)
+      el_in_db.elements = JSON.stringify(element);
+      el_in_db.save()
+    }
+    res.end(JSON.stringify({"result": "success"}))
   }
   catch(err){
     console.log(err)
