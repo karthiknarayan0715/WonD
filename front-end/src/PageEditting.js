@@ -1,5 +1,5 @@
 import './PageEditting.css'
-import $ from 'jquery'
+import $, { event } from 'jquery'
 import 'jquery-ui'
 import Cookies from 'universal-cookie'
 import { useEffect, useState } from 'react'
@@ -43,9 +43,11 @@ const PageEditting = ()=>{
         setSite(response.site)
         setRoutes(response.routes)
     }
-
-    var initX, initY;
     useEffect(()=>{
+        $(".toolbar").addClass("inactive")
+        $(".elementProperties").addClass("inactive")
+        $('.toolbar').hide(0)
+        $(".elementProperties").hide(0)
         if(!cookies.get("jwt")) navigate("/login")
         if(location.state){
             setSiteId(location.state.site_id)
@@ -55,23 +57,15 @@ const PageEditting = ()=>{
             navigate("/webpages")
     }, [])
 
-    useEffect(()=>{
-        $(".toolbar").addClass("inactive")
-        $(".elementProperties").addClass("inactive")
-        $('.toolbar').hide(0)
-        $(".elementProperties").hide(0)
-    }, [])
     useEffect(() => {
         if(selected_element){
             document.getElementById(selected_element.id).classList.add("selected")
-            document.getElementById(selected_element.id).querySelector('.resizeIcons').classList.add("active")
         }
         else{
             elements.forEach(element => {
                 const docEl = document.getElementById(element.id)
-                if(docEl.classList.contains("selected")){
+                if(docEl && docEl.classList.contains("selected")){
                     docEl.classList.remove("selected")
-                    docEl.querySelector(".resizeIcons").classList.remove("active")
                 }
             });
         }
@@ -79,44 +73,86 @@ const PageEditting = ()=>{
     useEffect(()=>{
         getSiteData()
     }, [siteId])
+
     useEffect(()=>{
         if(routes && routes.length > 0)
             SetCurRoute(routes[0])
     }, [routes])
-    useEffect(()=>{
-    }, [curRoute])
 
-    //#region 
-
-    const updateElement = (id, {top = null, left = null, backgroundColor = null, height = null, width = null})=>{
-        if(top == null) top = elements[id].top
-        if(left == null) left = elements[id].left
-        if(backgroundColor == null) backgroundColor = elements[id].backgroundColor
-        if(height == null) height = elements[id].height
-        if(width == null) width = elements[id].width
-        const temp_array = elements
-        temp_array[id].top = top;
-        temp_array[id].left = left;
-        temp_array[id].backgroundColor = backgroundColor;
-        temp_array[id].height = height;
-        temp_array[id].width = width;
-        updateElements([...temp_array])
+    const getElements = async ()=>{
+        const req = {
+            method: "POST",
+            headers: {"content-type": "application/json"},
+            body: JSON.stringify({"route_id": curRoute._id})
+        }
+        const res = await fetch(`${server_url}/api/websites/routes/elements`, req)
+        const response = await res.json()
+        var array = []
+        for(var i=0; i<response.elements.length; i++){
+            var element = await JSON.parse(response.elements[i].elements)
+            array.push(new Element(element.id, element.top, element.left, element.width, element.height, element.border_radius, element.backgroundColor, element.text))
+        }
+        updateElements(array)
     }
 
+    const save = ()=>{
+
+    }
+
+    useEffect(()=>{
+        if(curRoute!=null)
+        getElements()
+    }, [curRoute])
+    useEffect(()=>{
+        if(elements.length > 0){
+            elements.forEach((element)=>{
+                const elHTML = document.getElementById(element.id)
+                elHTML.addEventListener("mousedown", (event) => mouseDown(element, event))
+                elHTML.addEventListener("dblclick", (event) => dblclick(element, event))
+            })
+        }
+    }, [elements])
+
+    //#region Updating the Element
+
+    const updateElement = (id, {top = null, left = null, width = null, height = null, borderRadius = null, backgroundColor = null, text = null})=>{
+        if(elements.length > 0){
+            if (top == null) top = elements[id].top
+            if (left == null) left = elements[id].left
+            if (width == null) width = elements[id].width
+            if (height == null) height = elements[id].height
+            if (borderRadius == null) borderRadius = elements[id].borderRadius
+            if (backgroundColor == null) backgroundColor = elements[id].backgroundColor
+            if (text == null) text = elements[id].text
+
+            var array = elements 
+            array[id].top = top
+            array[id].left = left
+            array[id].width = width
+            array[id].height = height
+            array[id].borderRadius = borderRadius
+            array[id].backgroundColor = backgroundColor
+            array[id].text = text
+
+            updateElements([...array])
+        }
+    }
+
+    var initX = 0, initY = 0;
     const mouseMove = (event, element)=>{
         updateElement(element.id, {top: element.top - initY + event.clientY, left: element.left - initX + event.clientX})
         initY = event.clientY
         initX = event.clientX
     }
 
-    const mouseDown = (event, element)=>{
+    const mouseDown = (element, event)=>{
         onmousemove = (event)=>{mouseMove(event, element)}
         onmouseup = mouseUp
         initX = event.clientX;
         initY = event.clientY;
     }
 
-    const mouseUp = (element) =>{
+    const mouseUp = () =>{
         onmousemove = null
         onmouseup = null
     }
@@ -153,54 +189,31 @@ const PageEditting = ()=>{
             updateElement(selected_element.id, {height: val})
     }
     //#endregion
-    const generateHTML = (element)=>{
-        if(element.type == "box")
-        return (<div id={element.id} key={element.id} className="element" onDoubleClick={(event)=>dblclick(element, event)} onMouseDown={(event)=>{mouseDown(event, element)}} style={{
-            "top": element.top,
-            "left": element.left,
-            "width": element.width,
-            "height": element.height,
-            "borderRadius": element.border_radius,
-            "backgroundColor": element.backgroundColor,
-        }}>
-            <div className='resizeIcons'>
-                <div id='left_top' style={{"position": "relative", "top": -10, "left": -10, "width": "10px", "height": "10px", "borderRadius": "50%", "border": "5px solid white"}}></div>
-                <div id='right_top' style={{"position": "relative", "top": -10, "left": element.width-30, "width": "10px", "height": "10px", "borderRadius": "50%", "border": "5px solid white"}}></div>
-                <div style={{"position": "relative", "top": element.height-7, "left": -50, "width": "10px", "height": "10px", "borderRadius": "50%", "border": "5px solid white"}}></div>
-                <div style={{"position": "relative", "top": element.height-7, "left": element.width-70, "width": "10px", "height": "10px", "borderRadius": "50%", "border": "5px solid white"}}></div>
-            </div>
-        </div>)
-        else if(element.type == "circle"){
-            return (<div id={element.id} key={element.id} className="element" onDoubleClick={(event)=>dblclick(element, event)} onMouseDown={(event)=>{mouseDown(event, element)}} style={{
-                "top": element.top,
-                "left": element.left,
-                "width": element.radius,
-                "height": element.radius,
-                "borderRadius": "50%",
-                "backgroundColor": element.backgroundColor
-            }}></div>)
-        }
-    }
-
-    function Box(id, top, left, width, height, border_radius, backgroundColor) {
+    
+    function Element(id, top, left, width, height, border_radius, backgroundColor, text){
         this.id = id;
-        this.type = "box"
-        this.top = top
-        this.left = left
+        this.top = top;
+        this.left = left;
         this.width = width;
         this.height = height;
         this.border_radius = border_radius;
-        this.backgroundColor = backgroundColor
-    }
-    function Circle(id, top, left, radius, backgroundColor){
-        this.id = id;
-        this.type = "circle"
-        this.top = top;
-        this.left = left;
-        this.radius = radius;
         this.backgroundColor = backgroundColor;
-    }
+        this.text = text;
 
+        this.getHTML = ()=>{
+            return (
+                <div className='element' key={this.id} id={this.id} style={{
+                    "top": this.top, 
+                    "left": this.left, 
+                    "width": this.width, 
+                    "height": this.height, 
+                    "borderRadius": this.border_radius, 
+                    "backgroundColor": this.backgroundColor
+                }}>{this.text}</div>
+
+            )
+        }
+    }
     function toggle(){
         if(!windowOpen){
             if($(".allRoutes").hasClass("active")){
@@ -231,17 +244,25 @@ const PageEditting = ()=>{
         }
     }
 
-    function addElement(item){
+    async function addElement(item){
         var new_element;
         var id = elements.length;
         if(item == "box")
-            new_element = new Box(id, 10, 10, 300, 400, "5% 5%", "#000000");
+            new_element = new Element(id, 10, 10, 300, 400, "0%", "#000000");
         else if(item == "circle")
-            new_element = new Circle(id, 500, 400, 300, "#000000");
-        var array = elements;
-        array.push(new_element)
-        updateElements([...array])
+            new_element = new Element(id, 10, 10, 300, 300, "50%", "#000000");
+        const req = {
+            method: "POST",
+            headers: {"content-type": "application/json"},
+            body: JSON.stringify({"cur_route_id": curRoute._id, element_data: new_element})
+        }
+        const res = await fetch(`${server_url}/api/websites/routes/elements/add`, req)
+        const response = await res.json()
+        if(response.result == "success"){
+            updateElements([...elements, new_element])
+        }
     }
+
     function toggleRoutes(){
         if($(".allRoutes").hasClass("active")){
             $(".allRoutes").removeClass("active")
@@ -262,7 +283,6 @@ const PageEditting = ()=>{
     }
 
     const addRoute = async ()=>{
-        console.log(newRouteName)
         const req = {
             method: "POST",
             headers: {"content-type": "application/json"},
@@ -270,7 +290,6 @@ const PageEditting = ()=>{
         }
         const res = await fetch(`${server_url}/api/websites/routes/add`, req)
         const response = await res.json()
-        console.log(response)
         if(response.result == "success"){
             getSiteData()
             closeWindow()
@@ -286,7 +305,7 @@ const PageEditting = ()=>{
                 <body>
                     ${
                         elements.map((element)=>{
-                            return generateHTML(element)
+                            return element.getHTML()
                         })
                     }
                 </body>
@@ -330,7 +349,7 @@ const PageEditting = ()=>{
                 <div className='htmlOut' onClick={(event)=>{removeSelected(event)}}>
                     {
                         elements.map((element)=>{
-                            return generateHTML(element)
+                            return element.getHTML()
                         })
                     }
                 </div>

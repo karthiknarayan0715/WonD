@@ -14,7 +14,6 @@ const DropDown = (props)=>{
     }
 
     const toggleDropDown = ()=>{
-        const toggle = document.querySelector(".toggle-dropdown")
         const content = document.querySelector(".dropdown .content")
         if(content.classList.contains("active")){
             closeDropDown()
@@ -23,15 +22,10 @@ const DropDown = (props)=>{
             openDropDown()
         }
     }
-    useEffect(()=>{
-        $('.toggle-dropdown').on("click", ()=>{
-            toggleDropDown();
-        })
-    })
 
     return (
         <div className="dropdown">
-            <div className="toggle-dropdown">
+            <div className="toggle-dropdown" onClick={toggleDropDown}>
                 Services <b>˅</b>
             </div>
             <div className="content">

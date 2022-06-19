@@ -41,21 +41,26 @@ const userSitesSchema = new mongoose.Schema({
   user_id: {type: mongoose.Schema.Types.ObjectId, ref: "users"},
   site_id: {type: mongoose.Schema.Types.ObjectId, ref: "sites"}
 })
+const routeElementsSchema = new mongoose.Schema({
+  route_id: {type: mongoose.Schema.Types.ObjectId, ref: "routes"},
+  element_id: {type: mongoose.Schema.Types.ObjectId, ref: "elements"}
+})
+const elementsSchema = new mongoose.Schema({
+  elements: String
+})
 
 Users = mongoose.model('users', usersSchema);
 Sites = mongoose.model('sites', sitesSchema);
 SitesRoutes = mongoose.model('sites_routes', sitesRoutesSchema);
 Routes = mongoose.model('routes', routesSchema);
 UsersSites = mongoose.model('users_sites', userSitesSchema);
+RoutesElements = mongoose.model('routes_elements', routeElementsSchema)
+Elements = mongoose.model('elements', elementsSchema)
 
 
 const jwtSecretKey = "superSecretKey"
 
 app.listen(port, () => `Server running on 127.0.0.1/${port}`);
-
-app.get('/testApi', (req, res) => {
-  res.send("Token: ")
-})
 
 app.post('/api/allUsers', (req, res)=>{
   let users_array = []
@@ -136,6 +141,7 @@ app.post('/api/websites', async (req, res)=>{
           pages.push(page)
         }
       }
+      console.log(pages)
       res.end(JSON.stringify({"result": "success", "pages": pages}))
     }else{
       res.end(JSON.stringify({"result": "failed"}))
@@ -212,6 +218,44 @@ app.post("/api/websites/routes/add", async (req, res)=>{
     const new_site_routes = new SitesRoutes({"route_id": new_route._id, "site_id": site_id})
     new_site_routes.save()
     res.end(JSON.stringify({"result": "success"}))
+  }
+  catch(err){
+    console.log(err)
+    res.end(JSON.stringify({"result": "failed", "error": err}))
+  }
+})
+app.post("/api/websites/routes/elements", async (req, res) => {
+  console.log("boo")
+  try{
+    const route_id = req.body.route_id;
+    const routes_elements = await RoutesElements.find({"route_id": route_id})
+    var elements = []
+    for(i=0; i<routes_elements.length; i++){
+      elements.push(await Elements.findOne({"_id": routes_elements[i].element_id}))
+    }
+    res.end(JSON.stringify({"result": "success", "elements": elements}))
+  }
+  catch(err){
+    console.log(err);
+    res.end(JSON.stringify({"result": "failed", "error": err}))
+  }
+})
+
+app.post("/api/websites/routes/elements/add", async (req, res)=>{
+  try{
+    const cur_route_id = req.body.cur_route_id;
+    const element_data = req.body.element_data;
+    console.log(element_data)
+
+    const new_element = new Elements({"elements": JSON.stringify(element_data)})
+    new_element.save()
+
+    console.log(new_element)
+
+    const new_route_element = new RoutesElements({"route_id": cur_route_id, "element_id": new_element._id})
+    new_route_element.save()
+
+    res.end(JSON.stringify({"result": "success", "element": new_element}))
   }
   catch(err){
     console.log(err)

@@ -31,6 +31,9 @@ const YourPages = ()=>{
     }
 
     useEffect(()=>{
+        if(!jwt){
+            navigate("/login")
+        }
         verifyJWT()
     }, [])
     useEffect(()=>{
