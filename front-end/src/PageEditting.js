@@ -91,9 +91,8 @@ const PageEditting = ()=>{
         for(var i=0; i<response.elements.length; i++){
             var id = response.elements[i]._id
             var element = await JSON.parse(response.elements[i].elements)
-            array.push(new Element(id, element.id, element.top, element.left, element.width, element.height, element.border_radius, element.backgroundColor, element.text))
+            array.push(new Element(id, element.id, element.top, element.left, element.width, element.height, element.borderRadius, element.backgroundColor, element.text))
         }
-        console.log(array)
         updateElements(array)
     }
 
@@ -105,7 +104,6 @@ const PageEditting = ()=>{
         }
         const res = await fetch(`${server_url}/api/websites/routes/elements/save`, req)
         const response = await res.json()
-        console.log(response)
     }
 
     useEffect(()=>{
@@ -114,9 +112,8 @@ const PageEditting = ()=>{
     }, [curRoute])
     useEffect(()=>{
         document.onkeydown = (event)=>{
-            event.preventDefault()
             if(event.ctrlKey && event.key === "s"){
-                console.log("saving...")
+                event.preventDefault()
                 save()
             }
         }
@@ -204,16 +201,24 @@ const PageEditting = ()=>{
         if (val != NaN)
             updateElement(selected_element.id, {height: val})
     }
+    const borderRadiusChanged = (event)=>{
+        var val = event.target.value
+        updateElement(selected_element.id, {borderRadius: val})
+    }
+    const textChanged = (event)=>{
+        var val = event.target.value
+        updateElement(selected_element.id, {text: val})
+    }
     //#endregion
     
-    function Element(db_id, id, top, left, width, height, border_radius, backgroundColor, text){
+    function Element(db_id, id, top, left, width, height, borderRadius, backgroundColor, text){
         this.db_id = db_id
         this.id = id;
         this.top = top;
         this.left = left;
         this.width = width;
         this.height = height;
-        this.border_radius = border_radius;
+        this.borderRadius = borderRadius;
         this.backgroundColor = backgroundColor;
         this.text = text;
 
@@ -224,7 +229,7 @@ const PageEditting = ()=>{
                     "left": this.left, 
                     "width": this.width, 
                     "height": this.height, 
-                    "borderRadius": this.border_radius, 
+                    "borderRadius": this.borderRadius,
                     "backgroundColor": this.backgroundColor
                 }}>{this.text}</div>
 
@@ -345,7 +350,7 @@ const PageEditting = ()=>{
                                     {
                                         routes.map((route)=>{
                                             return (
-                                                <div className='route' key={route._id}>{route.name}</div>
+                                                <div className='route' key={route._id} onClick={()=>{SetCurRoute(route)}}>{route.name}</div>
                                             )
                                         })
                                     }
@@ -376,12 +381,14 @@ const PageEditting = ()=>{
                     </div>
                     {selected_element ?
                         <div className='elementProperties'>
-                            <form onSubmit={(e)=>{e.preventDefault()}}>
+                            <form>
                                 <div className='text'>Top</div><input type="text" defaultValue={selected_element.top} onChange={topChanged}></input>
                                 <div className='text'>Left</div><input type="text" defaultValue={selected_element.left} onChange={leftChanged}></input>
                                 <div className='text'>Color</div><input type="color" defaultValue={selected_element.backgroundColor} onChange={backgroundChanged}></input>
                                 <div className='text'>Width</div><input type="text" defaultValue={selected_element.width} onChange={widthChanged}></input>
                                 <div className='text'>Height</div><input type="text" defaultValue={selected_element.height} onChange={heightChanged}></input>
+                                <div className='text'>Border Radius</div><input type="text" defaultValue={selected_element.borderRadius} onChange={borderRadiusChanged}></input>
+                                <div className='text'>Text</div><input type="text" defaultValue={selected_element.text} onChange={textChanged}></input>
                             </form>
                         </div>
                         :
