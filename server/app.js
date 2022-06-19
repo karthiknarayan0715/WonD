@@ -265,6 +265,7 @@ app.post("/api/websites/routes/elements/add", async (req, res)=>{
 })
 
 app.post("/api/websites/routes/elements/save", async (req, res)=>{
+  
   try{
     const elements = req.body.elements;
     for(var i=0; i<elements.length; i++){
@@ -273,7 +274,23 @@ app.post("/api/websites/routes/elements/save", async (req, res)=>{
       console.log(el_in_db)
       el_in_db.elements = JSON.stringify(element);
       el_in_db.save()
+      res.end(JSON.stringify({"result": "success"}))
     }
+    
+  }
+  catch(err){
+    console.log(err)
+    res.end(JSON.stringify({"result": "failed", "error": err}))
+  }
+})
+app.post("/api/websites/routes/elements/remove", async (req, res)=>{
+  try{
+    const element = req.body.element;
+    const el = await Elements.findOne({"_id": element.db_id})
+    console.log(el)
+    await Elements.deleteOne({"_id": element.db_id})
+
+    await RoutesElements.deleteOne({"element_id": element.db_id})
     res.end(JSON.stringify({"result": "success"}))
   }
   catch(err){

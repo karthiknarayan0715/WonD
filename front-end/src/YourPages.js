@@ -27,6 +27,7 @@ const YourPages = ()=>{
         const for_pages = await fetch(`${server_url}/api/websites`, req)
         const pages_res = await for_pages.json()
         const pages = await pages_res.pages
+        console.log(pages)
         setPages([...pages])
     }
 

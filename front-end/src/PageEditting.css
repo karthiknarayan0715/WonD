@@ -95,6 +95,9 @@
 }
 .element{
     position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 .element.selected{
     border: 3px dotted white;
@@ -164,4 +167,15 @@
     width: 1000px;
     height: 700px;
     background-color: rgb(201, 192, 183);
+}
+.saving{
+    position: absolute;
+    display: flex;
+    width: 100%;
+    justify-content: center;
+}
+.saving .savingText{
+    background-color: rgb(64, 64, 64);
+    color: aliceblue;
+    padding: 10px 40px 10px 40px;
 }

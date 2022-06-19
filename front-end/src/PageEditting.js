@@ -11,6 +11,7 @@ const PageEditting = ()=>{
     const [siteId, setSiteId] = useState(null)
     const [user, setUser] = useState(null)
     const [site, setSite] = useState(null)
+    const [isSaving, SetIsSaving] = useState(false)
     const [routes, setRoutes] = useState(null)
     const [curRoute, SetCurRoute] = useState(null)
     const [newRouteName, SetNewRouteName] = useState(null)
@@ -43,6 +44,12 @@ const PageEditting = ()=>{
         setSite(response.site)
         setRoutes(response.routes)
     }
+
+    //TODO: 
+    // window.addEventListener("beforeunload", (event)=>{
+    //     event.preventDefault();
+    //     event.returnValue = '';
+    // })
     useEffect(()=>{
         $(".toolbar").addClass("inactive")
         $(".elementProperties").addClass("inactive")
@@ -97,6 +104,7 @@ const PageEditting = ()=>{
     }
 
     const save = async ()=>{
+        SetIsSaving(true)
         const req = {
             method: "POST",
             headers: {"content-type": "application/json"},
@@ -104,14 +112,17 @@ const PageEditting = ()=>{
         }
         const res = await fetch(`${server_url}/api/websites/routes/elements/save`, req)
         const response = await res.json()
+        SetIsSaving(false)
     }
 
     useEffect(()=>{
         if(curRoute!=null)
         getElements()
     }, [curRoute])
+    
     useEffect(()=>{
         document.onkeydown = (event)=>{
+
             if(event.ctrlKey && event.key === "s"){
                 event.preventDefault()
                 save()
@@ -125,10 +136,22 @@ const PageEditting = ()=>{
             })
         }
     }, [elements])
+    useEffect(()=>{
+        if(selected_element!=null)
+            document.onkeydown = (event)=>{
+                if(event.ctrlKey && event.key === "s"){
+                    event.preventDefault()
+                    save()
+                }
+                if(event.key == "Delete"){
+                    removeElement(selected_element)
+                }
+            }
+    }, [selected_element])
 
     //#region Updating the Element
 
-    const updateElement = (id, {top = null, left = null, width = null, height = null, borderRadius = null, backgroundColor = null, text = null})=>{
+    const updateElement = (id, {top = null, left = null, width = null, height = null, borderRadius = null, backgroundColor = null, text = null, fontColor = null})=>{
         if(elements.length > 0){
             if (top == null) top = elements[id].top
             if (left == null) left = elements[id].left
@@ -137,6 +160,7 @@ const PageEditting = ()=>{
             if (borderRadius == null) borderRadius = elements[id].borderRadius
             if (backgroundColor == null) backgroundColor = elements[id].backgroundColor
             if (text == null) text = elements[id].text
+            if (fontColor == null) fontColor = elements[id].fontColor
 
             var array = elements 
             array[id].top = top
@@ -146,6 +170,7 @@ const PageEditting = ()=>{
             array[id].borderRadius = borderRadius
             array[id].backgroundColor = backgroundColor
             array[id].text = text
+            array[id].fontColor = fontColor
 
             updateElements([...array])
         }
@@ -191,6 +216,9 @@ const PageEditting = ()=>{
     const backgroundChanged = (event)=>{
         updateElement(selected_element.id, {backgroundColor:event.target.value})
     }
+    const fontColorChanged = (event)=>{
+        updateElement(selected_element.id, {fontColor:event.target.value})
+    }
     const widthChanged = (event)=>{
         var val = parseFloat(event.target.value)
         if (val != NaN)
@@ -211,7 +239,7 @@ const PageEditting = ()=>{
     }
     //#endregion
     
-    function Element(db_id, id, top, left, width, height, borderRadius, backgroundColor, text){
+    function Element(db_id, id, top, left, width, height, borderRadius, backgroundColor, text, fontColor){
         this.db_id = db_id
         this.id = id;
         this.top = top;
@@ -221,6 +249,8 @@ const PageEditting = ()=>{
         this.borderRadius = borderRadius;
         this.backgroundColor = backgroundColor;
         this.text = text;
+        this.fontColor = fontColor?fontColor:"#000000"
+
 
         this.getHTML = ()=>{
             return (
@@ -230,8 +260,9 @@ const PageEditting = ()=>{
                     "width": this.width, 
                     "height": this.height, 
                     "borderRadius": this.borderRadius,
-                    "backgroundColor": this.backgroundColor
-                }}>{this.text}</div>
+                    "backgroundColor": this.backgroundColor,
+                    "color": this.fontColor
+                }}><div className='text'>{this.text}</div></div>
 
             )
         }
@@ -265,10 +296,38 @@ const PageEditting = ()=>{
             $(".elementProperties").addClass("inactive")
         }
     }
+    const removeElement = async (element)=>{
+        var array = elements;
+        console.log(array)
+        const index = array.indexOf(element)
+        console.log(index)
+        var response = null;
+        if(index!=-1){
+            array.splice(index, 1)
+            const req = {
+                method: "POST",
+                headers: {"content-type": "application/json"},
+                body: JSON.stringify({"element": element})
+            }
+            const res = await fetch(`${server_url}/api/websites/routes/elements/remove`, req)
+            const response = await res.json()
+            console.log(response)
+        }
+        SelectElement(null)
+        if(response && response.result == "success"){
+            for(var i=0; i<array.length; i++)
+            {
+                array[i].id = i;
+            }
+            save()
+            updateElements([...array])
+        }
+    }
 
     async function addElement(item){
         var new_element;
         var id = elements.length;
+        save()
         if(item == "box")
             new_element = new Element(null, id, 10, 10, 300, 400, "0%", "#000000");
         else if(item == "circle")
@@ -337,6 +396,12 @@ const PageEditting = ()=>{
 
     return(
         <div>
+        {
+            isSaving && 
+            <div className="saving">
+                <div className="savingText">saving...</div>
+            </div>
+        }
         <div className="pageEditting">
             <div className="sideBar" style={{"height": "auto"}}>
                 <div className='toggle' style={{"width": "50px", "height": "auto"}} onClick={toggle}><img src='/settings.png' width="50px" height="50px"></img></div>
@@ -350,7 +415,7 @@ const PageEditting = ()=>{
                                     {
                                         routes.map((route)=>{
                                             return (
-                                                <div className='route' key={route._id} onClick={()=>{SetCurRoute(route)}}>{route.name}</div>
+                                                <div className='route' key={route._id} onClick={()=>{save(); SetCurRoute(route)}}>{route.name}</div>
                                             )
                                         })
                                     }
@@ -363,7 +428,6 @@ const PageEditting = ()=>{
                     <div className="tools">
                     <div className='item' id='box' onClick={()=>{addElement("box")}}><div id='boxImage'></div></div>
                     <div className='item' id='circle' onClick={()=>{addElement("circle")}}><div id='circleImage'></div></div>
-                    <div className='item' id='text' onClick={()=>{addElement("text")}}><div id='textImage'>TEXT</div></div>
                     </div>
                 </div>
             </div>
@@ -389,6 +453,7 @@ const PageEditting = ()=>{
                                 <div className='text'>Height</div><input type="text" defaultValue={selected_element.height} onChange={heightChanged}></input>
                                 <div className='text'>Border Radius</div><input type="text" defaultValue={selected_element.borderRadius} onChange={borderRadiusChanged}></input>
                                 <div className='text'>Text</div><input type="text" defaultValue={selected_element.text} onChange={textChanged}></input>
+                                <div className='text'>Font Color</div><input type="color" defaultValue={selected_element.fontColor} onChange={fontColorChanged}></input>
                             </form>
                         </div>
                         :
