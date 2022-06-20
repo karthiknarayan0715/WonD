@@ -246,17 +246,17 @@ app.post("/api/websites/routes/elements/add", async (req, res)=>{
     const element_data = req.body.element_data;
 
     const new_element = new Elements({"elements": JSON.stringify(element_data)})
-    var elements = await JSON.parse(new_element.elements)
-    elements.db_id = JSON.stringify(new_element._id)
-    new_element.elements = JSON.stringify(elements)
-    new_element.save()
-
-    console.log(new_element)
+    await new_element.save()
+    var elements = JSON.parse(new_element.elements)
+    elements.db_id = new_element._id
+    await Elements.findOneAndUpdate({"_id": new_element.id}, {"elements": JSON.stringify(elements)})
 
     const new_route_element = new RoutesElements({"route_id": cur_route_id, "element_id": new_element._id})
-    new_route_element.save()
+    await new_route_element.save()
 
-    res.end(JSON.stringify({"result": "success", "element": new_element}))
+    const cur_element = await Elements.findOne({"_id": new_element._id})
+
+    res.end(JSON.stringify({"result": "success", "element": cur_element}))
   }
   catch(err){
     console.log(err)
@@ -270,8 +270,8 @@ app.post("/api/websites/routes/elements/save", async (req, res)=>{
     const elements = req.body.elements;
     for(var i=0; i<elements.length; i++){
       const element = elements[i]
+      console.log(element)
       const el_in_db = await Elements.findOne({"_id": element.db_id})
-      console.log(el_in_db)
       el_in_db.elements = JSON.stringify(element);
       el_in_db.save()
       res.end(JSON.stringify({"result": "success"}))
@@ -287,7 +287,7 @@ app.post("/api/websites/routes/elements/remove", async (req, res)=>{
   try{
     const element = req.body.element;
     const el = await Elements.findOne({"_id": element.db_id})
-    console.log(el)
+    console.log("ROMOVING: " + el)
     await Elements.deleteOne({"_id": element.db_id})
 
     await RoutesElements.deleteOne({"element_id": element.db_id})
