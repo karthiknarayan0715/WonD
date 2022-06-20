@@ -122,10 +122,14 @@ const PageEditting = ()=>{
     
     useEffect(()=>{
         document.onkeydown = (event)=>{
-
-            if(event.ctrlKey && event.key === "s"){
+            if(event.ctrlKey && event.key == "s"){
                 event.preventDefault()
+                console.log("saving...")
                 save()
+            }
+            if(selected_element && event.key == "Delete"){
+                console.log("deleting..")
+                removeElement(selected_element)
             }
         }
         if(elements.length > 0){
@@ -135,19 +139,9 @@ const PageEditting = ()=>{
                 elHTML.addEventListener("dblclick", (event) => dblclick(element, event))
             })
         }
-    }, [elements])
-    useEffect(()=>{
-        if(selected_element!=null)
-            document.onkeydown = (event)=>{
-                if(event.ctrlKey && event.key === "s"){
-                    event.preventDefault()
-                    save()
-                }
-                if(event.key == "Delete"){
-                    removeElement(selected_element)
-                }
-            }
-    }, [selected_element])
+    }, [elements, selected_element])
+
+
 
     //#region Updating the Element
 
@@ -254,7 +248,7 @@ const PageEditting = ()=>{
 
         this.getHTML = ()=>{
             return (
-                <div className='element' key={this.id} id={this.id} style={{
+                <div className={`element ${this.db_id}`} key={this.id} id={this.id} style={{
                     "top": this.top, 
                     "left": this.left, 
                     "width": this.width, 
@@ -298,9 +292,7 @@ const PageEditting = ()=>{
     }
     const removeElement = async (element)=>{
         var array = elements;
-        console.log(array)
         const index = array.indexOf(element)
-        console.log(index)
         var response = null;
         if(index!=-1){
             array.splice(index, 1)
@@ -310,8 +302,7 @@ const PageEditting = ()=>{
                 body: JSON.stringify({"element": element})
             }
             const res = await fetch(`${server_url}/api/websites/routes/elements/remove`, req)
-            const response = await res.json()
-            console.log(response)
+            response = await res.json()
         }
         SelectElement(null)
         if(response && response.result == "success"){
@@ -319,15 +310,14 @@ const PageEditting = ()=>{
             {
                 array[i].id = i;
             }
-            save()
             updateElements([...array])
+            save()
         }
     }
 
     async function addElement(item){
         var new_element;
         var id = elements.length;
-        save()
         if(item == "box")
             new_element = new Element(null, id, 10, 10, 300, 400, "0%", "#000000");
         else if(item == "circle")
@@ -340,6 +330,9 @@ const PageEditting = ()=>{
         const res = await fetch(`${server_url}/api/websites/routes/elements/add`, req)
         const response = await res.json()
         if(response.result == "success"){
+            var new_element_data = JSON.parse(response.element.elements)
+            new_element = new Element(new_element_data.db_id, new_element_data.id, new_element_data.top, new_element_data.left, new_element_data.width, new_element_data.height, new_element_data.borderRadius, new_element_data.backgroundColor, new_element_data.text, new_element_data.fontColor)
+            console.log(new_element)
             updateElements([...elements, new_element])
         }
     }
