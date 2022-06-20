@@ -8,5 +8,7 @@ This is an application which can help people to design their own websites. Each 
 - Database: MongoDB
 
 ## Preview:-
-
+Login Page
 ![image](https://drive.google.com/uc?export=view&id=1QyqJy89E-sFSoBsIhjAyZPsACX_qcaOy)
+Home Page
+![image](https://drive.google.com/uc?export=view&id=1v4affM2B1_Fe5hO4Cz0SGZe21Un7oirX)
